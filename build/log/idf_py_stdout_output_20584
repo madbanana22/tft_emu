@@ -1,0 +1,57 @@
+Command: cmake -G Ninja -B E:\esp\tft_emu\build -DPYTHON_DEPS_CHECKED=1 -DPYTHON=C:\Espressif\tools\python\v6.1\venv\Scripts\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=True E:\esp\tft_emu
+-- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.51.0.windows.1")
+-- Minimal build - ON
+-- ccache will be used for faster recompilation
+-- The C compiler identification is GNU 15.2.0
+-- The CXX compiler identification is GNU 15.2.0
+-- The ASM compiler identification is GNU
+-- Found assembler: C:/Espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc.exe
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32-elf-g++.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- git rev-parse returned 'fatal: not a git repository (or any of the parent directories): .git'
+-- Could not use 'git describe' to determine PROJECT_VER.
+-- Building ESP-IDF components for target esp32
+-- KCONFIG_REPORT_VERBOSITY not set, using default
+-- Project sdkconfig file E:/esp/tft_emu/sdkconfig
+-- Compiler supported targets: xtensa-esp-elf
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- App "hello_world" version: 1
+-- Found Python3: C:/Espressif/tools/python/v6.1/venv/Scripts/python.exe (found version "3.13.7") found components: Interpreter
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS - Success
+-- Setting up mbedtls configuration
+-- Linkage type is PUBLIC
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_system/ld/esp32/memory.ld.in
+--   -> Preprocessing .in script: E:/esp/.espressif/v6.1/esp-idf/components/esp_system/ld/esp32/memory.ld.in
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_system/ld/esp32/sections.ld.in
+--   -> Preprocessing .in script: E:/esp/.espressif/v6.1/esp-idf/components/esp_system/ld/esp32/sections.ld.in
+--   -> Applying ldgen processing: E:/esp/tft_emu/build/esp-idf/esp_system/ld/sections.ld.in
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_rom/esp32/ld/esp32.rom.ld
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_rom/esp32/ld/esp32.rom.api.ld
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_rom/esp32/ld/esp32.rom.libgcc.ld
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_rom/esp32/ld/esp32.rom.libc-funcs.ld
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/soc/esp32/ld/esp32.peripherals.ld
+-- Adding linker script E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_regi2c/esp32/rom.regi2c.ld
+-- Components: app_update bootloader bootloader_support cxx efuse esp_app_format esp_blockdev esp_bootloader_format esp_common esp_driver_dma esp_driver_gpio esp_hal_ana_conv esp_hal_clock esp_hal_dma esp_hal_gpio esp_hal_gpspi esp_hal_i2s esp_hal_mspi esp_hal_pmu esp_hal_regi2c esp_hal_rtc_timer esp_hal_security esp_hal_systimer esp_hal_timg esp_hal_touch_sens esp_hal_uart esp_hal_usb esp_hal_wdt esp_hw_support esp_libc esp_mm esp_partition esp_pm esp_rom esp_security esp_stdio esp_system esp_timer esp_usb_cdc_rom_console esptool_py freertos hal heap log main mbedtls partition_table pthread soc spi_flash xtensa
+-- Component paths: E:/esp/.espressif/v6.1/esp-idf/components/app_update E:/esp/.espressif/v6.1/esp-idf/components/bootloader E:/esp/.espressif/v6.1/esp-idf/components/bootloader_support E:/esp/.espressif/v6.1/esp-idf/components/cxx E:/esp/.espressif/v6.1/esp-idf/components/efuse E:/esp/.espressif/v6.1/esp-idf/components/esp_app_format E:/esp/.espressif/v6.1/esp-idf/components/esp_blockdev E:/esp/.espressif/v6.1/esp-idf/components/esp_bootloader_format E:/esp/.espressif/v6.1/esp-idf/components/esp_common E:/esp/.espressif/v6.1/esp-idf/components/esp_driver_dma E:/esp/.espressif/v6.1/esp-idf/components/esp_driver_gpio E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_ana_conv E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_clock E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_dma E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_gpio E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_gpspi E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_i2s E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_mspi E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_pmu E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_regi2c E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_rtc_timer E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_security E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_systimer E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_timg E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_touch_sens E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_uart E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_usb E:/esp/.espressif/v6.1/esp-idf/components/esp_hal_wdt E:/esp/.espressif/v6.1/esp-idf/components/esp_hw_support E:/esp/.espressif/v6.1/esp-idf/components/esp_libc E:/esp/.espressif/v6.1/esp-idf/components/esp_mm E:/esp/.espressif/v6.1/esp-idf/components/esp_partition E:/esp/.espressif/v6.1/esp-idf/components/esp_pm E:/esp/.espressif/v6.1/esp-idf/components/esp_rom E:/esp/.espressif/v6.1/esp-idf/components/esp_security E:/esp/.espressif/v6.1/esp-idf/components/esp_stdio E:/esp/.espressif/v6.1/esp-idf/components/esp_system E:/esp/.espressif/v6.1/esp-idf/components/esp_timer E:/esp/.espressif/v6.1/esp-idf/components/esp_usb_cdc_rom_console E:/esp/.espressif/v6.1/esp-idf/components/esptool_py E:/esp/.espressif/v6.1/esp-idf/components/freertos E:/esp/.espressif/v6.1/esp-idf/components/hal E:/esp/.espressif/v6.1/esp-idf/components/heap E:/esp/.espressif/v6.1/esp-idf/components/log E:/esp/tft_emu/main E:/esp/.espressif/v6.1/esp-idf/components/mbedtls E:/esp/.espressif/v6.1/esp-idf/components/partition_table E:/esp/.espressif/v6.1/esp-idf/components/pthread E:/esp/.espressif/v6.1/esp-idf/components/soc E:/esp/.espressif/v6.1/esp-idf/components/spi_flash E:/esp/.espressif/v6.1/esp-idf/components/xtensa
+-- Configuring done (48.1s)
+-- Generating done (1.6s)
+-- Build files have been written to: E:/esp/tft_emu/build

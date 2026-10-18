@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TFT Emulator</title>
+<style>
+:root { --bg:#101418; --panel:#1a2027; --txt:#dbe4ed; --dim:#7d8b99; --acc:#4cc38a; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.45 system-ui,'Segoe UI',Arial,sans-serif; }
+header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 14px; background:var(--panel); position:sticky; top:0; z-index:5; }
+header b { color:var(--acc); }
+.badge { padding:2px 8px; border-radius:4px; background:#263038; color:var(--dim); font-size:12px; }
+.badge.on { color:var(--acc); }
+main { display:flex; flex-wrap:wrap; gap:16px; padding:16px; max-width:1200px; margin:0 auto; }
+#stage { flex:1 1 480px; min-width:300px; }
+#view { background:#000; display:block; margin:0 auto; max-width:100%; max-height:90vh; image-rendering:pixelated; box-shadow:0 2px 12px rgba(0,0,0,.5); }
+.stats { color:var(--dim); font-size:12px; margin-top:6px; text-align:center; }
+fieldset { border:1px solid #2b3742; border-radius:8px; background:var(--panel); padding:10px 12px; margin:0 0 12px 0; min-width:300px; flex:1 1 300px; }
+legend { color:var(--acc); font-weight:600; padding:0 6px; }
+label { display:block; margin:6px 0 2px; font-size:12px; color:var(--dim); }
+input[type=text],input[type=number],select,input[type=password]{ width:100%; padding:6px 8px; background:#0d1115; color:var(--txt); border:1px solid #2b3742; border-radius:4px; }
+.row { display:flex; gap:8px; } .row > div { flex:1; }
+button { margin-top:8px; padding:7px 12px; background:var(--acc); color:#08281c; font-weight:600; border:0; border-radius:5px; cursor:pointer; }
+button.alt { background:#2b3742; color:var(--txt); }
+button.warn { background:#d9534f; color:#fff; }
+#msg { margin-top:8px; font-size:12px; color:var(--acc); min-height:18px; }
+</style>
+</head>
+<body>
+<header>
+  <b>TFT Emulator</b>
+  <span class="badge" id="bmode">--</span>
+  <span class="badge" id="bip">--</span>
+  <span class="badge" id="bres">--</span>
+  <span class="badge" id="bps">--</span>
+  <span class="badge" id="bfps">--</span>
+  <span class="badge" id="bws">ws 0</span>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="view" width="80" height="160"></canvas>
+    <div class="stats" id="infoLine">connecting…</div>
+    <div class="stats" id="diagLine">--</div>
+    <div class="stats">Hold the BOOT button for ~1 s in station mode to boot into AP mode.</div>
+  </div>
+  <div id="panel" style="flex:1 1 380px; display:flex; flex-wrap:wrap; gap:12px;">
+    <fieldset>
+      <legend>Display</legend>
+      <div class="row">
+        <div><label>Width (RAM cols)</label><input id="dsW" type="number" min="16" max="255" value="80"></div>
+        <div><label>Height (RAM rows)</label><input id="dsH" type="number" min="16" max="255" value="160"></div>
+      </div>
+      <div class="row">
+        <div><label>View rotation</label>
+          <select id="dsRot"><option value="0">0°</option><option value="1">90°</option><option value="2">180°</option><option value="3">270°</option></select>
+        </div>
+        <div><label>Pixel byte order</label>
+          <select id="dsSwap"><option value="0">hi byte first</option><option value="1">lo byte first</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>SPI mode (reboot to apply)</label>
+          <select id="dsSpiMode">
+            <option value="1">1 - slave-safe, DMA ok</option>
+            <option value="0">0</option>
+            <option value="2">2</option>
+            <option value="3">3 - 1-bit shift on ESP32 slave</option>
+          </select>
+        </div>
+        <div><label>Window parameter width</label>
+          <select id="dsAddr"><option value="4">4 bytes (16-bit)</option><option value="2">2 bytes (ST7735 native)</option></select>
+        </div>
+        <div><label>Extra 180° flip</label>
+          <select id="dsStyle"><option value="0">off</option><option value="1">on</option></select>
+        </div>
+      </div>
+      <button id="btnApply">Apply</button>
+      <button class="alt" id="btnTest">Local preview</button>
+    </fieldset>
+    <fieldset>
+      <legend>Test generator (GPIO loopback)</legend>
+      <div class="stats" style="text-align:left;margin:0 0 6px 0">
+        Two drive modes. <b>Jumpered</b>: wire test pins to emulator pins (SCK, MOSI, CS, DC, RES) and
+        start. <b>Internal loopback</b>: no wiring — the internal master drives the emulator GPIO pads
+        directly, so the real SPI slave path is exercised without jumpers. Use loopback to check the
+        emulator when the jumpered mode stays black.
+      </div>
+      <div class="row">
+        <div><label>Drive mode</label>
+          <select id="tgLoop">
+            <option value="0">Jumpered pins</option>
+            <option value="1">Internal loopback (no wiring)</option>
+          </select>
+        </div>
+        <div><label>Pattern</label>
+          <select id="tgPattern">
+            <option value="0">Rainbow</option>
+            <option value="1">Progress bar</option>
+            <option value="2">Color bars</option>
+            <option value="3">Checkerboard</option>
+            <option value="4">Solid sweep</option>
+            <option value="5">Gradient</option>
+          </select>
+        </div>
+        <div><label>FPS</label><input id="tgFps" type="number" min="1" max="60" value="10"></div>
+      </div>
+      <label>SPI clock (MHz)</label><input id="tgMhz" type="number" min="1" max="40" value="8">
+      <button id="btnTestOn">Start</button>
+      <button class="alt" id="btnTestOff">Stop</button>
+      <span class="badge" id="btest">host off</span>
+    </fieldset>
+    <fieldset>
+      <legend>Code interface (no GPIO)</legend>
+      <div class="stats" style="text-align:left;margin:0 0 6px 0">
+        Drive the panel from code: <code>POST /api/inject</code> with raw bytes as body —
+        first 11 bytes typically the window command (<code>2A 00 00 x1h x1l 2B 00 00 y1h y1l 2C</code>, DC=0),
+        then pixel data as a second request (DC=1). RGB565, byte order follows the pixel order setting.
+        <code>GET /api/fb</code> readback.
+      </div>
+      <div class="row">
+        <div><button id="btnInjDemo">Start injection demo</button></div>
+        <div><button class="alt" id="btnInjStop">Stop injection</button></div>
+      </div>
+      <div class="row">
+        <div><label>Handle (JSON, or any code)</label>
+          <textarea id="caCmd" rows="3" spellcheck="false" style="width:100%;padding:6px 8px;background:#0d1115;color:var(--txt);border:1px solid #2b3742;border-radius:4px;font-family:monospace"></textarea>
+        </div>
+      </div>
+      <button class="alt" id="btnInjRun">Run (draw commands)</button>
+      <span class="badge" id="bcode">code off</span>
+    </fieldset>
+    <fieldset>
+      <legend>WiFi station</legend>
+      <label>SSID</label><input id="wfSsid" type="text" spellcheck="false" autocomplete="off">
+      <label>Password</label><input id="wfPass" type="password">
+      <button id="btnWifi">Save &amp; connect</button>
+    </fieldset>
+    <fieldset>
+      <legend>Access point</legend>
+      <label>SSID (empty = auto)</label><input id="apSsid" type="text" spellcheck="false" autocomplete="off">
+      <label>Password (min 8 chars)</label><input id="apPass" type="password">
+      <button class="alt" id="btnAp">Save AP settings</button>
+      <button class="alt" id="btnApMode">Switch to AP mode now</button>
+    </fieldset>
+    <fieldset>
+      <legend>Device</legend>
+      <button class="alt" id="btnReboot">Reboot</button>
+      <button class="warn" id="btnFactory">Factory reset</button>
+    </fieldset>
+    <div id="msg"></div>
+  </div>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const canvas = $("view"), dctx = canvas.getContext("2d");
+const ramCv = document.createElement("canvas");
+const ramCtx = ramCv.getContext("2d");
+const glassCv = document.createElement("canvas");
+const glassCtx = glassCv.getContext("2d");
+let ramData = null;
+let ramW = 0, ramH = 0, mad = 0, flip180 = 0;
+let rot = 0;
+let framesSince = 0, fps = 0, fpsAt = performance.now();
+let lastFrameKey = "";
+
+function bits(m) { return { mv: !!(m & 0x20), mx: !!(m & 0x40), my: !!(m & 0x80) }; }
+
+function relayout() {
+  if (!ramData) return;
+  const b = bits(mad);
+  let gw, gh;
+  if (b.mv) { gw = ramH; gh = ramW; } else { gw = ramW; gh = ramH; }
+  glassCv.width = gw; glassCv.height = gh;
+  const W = gw, H = gh;
+  let a = 1, d0 = 1, e = 0, f = 0, c = 0, bcoef = 0;
+  if (!b.mv) {
+    a = b.mx ? -1 : 1; e = b.mx ? W - 1 : 0;
+    d0 = b.my ? -1 : 1; f = b.my ? H - 1 : 0;
+  } else {
+    a = 0; c = b.my ? -1 : 1; e = b.my ? H - 1 : 0;
+    d0 = 0; bcoef = b.mx ? -1 : 1; f = b.mx ? W - 1 : 0;
+  }
+  if (flip180) {
+    a = -a; d0 = -d0; c = -c; bcoef = -bcoef;
+    e = W - 1 - e; f = H - 1 - f;
+  }
+  glassCtx.setTransform(a, bcoef, c, d0, e, f);
+  glassCtx.drawImage(ramCv, 0, 0);
+  glassCtx.setTransform(1, 0, 0, 1, 0, 0);
+  dctx.save();
+  dctx.fillStyle = "#000";
+  if ((rot & 1)) {
+    canvas.width = H; canvas.height = W;
+    dctx.setTransform(1, 0, 0, 1, 0, 0);
+    dctx.translate(H / 2, W / 2);
+  } else {
+    canvas.width = W; canvas.height = H;
+    dctx.setTransform(1, 0, 0, 1, 0, 0);
+    dctx.translate(W / 2, H / 2);
+  }
+  dctx.rotate(rot * Math.PI / 2);
+  dctx.drawImage(glassCv, -W / 2, -H / 2);
+  dctx.restore();
+}
+
+function ensureRam(w, h) {
+  if (ramData && ramCv.width === w && ramCv.height === h) return;
+  ramW = w; ramH = h;
+  ramCv.width = w; ramCv.height = h;
+  ramData = ramCtx.createImageData(w, h);
+  const d = ramData.data;
+  for (let i = 3; i < d.length; i += 4) d[i] = 255;
+  relayout();
+}
+
+function onFrame(u8) {
+  if (u8.length < 17 || u8[0] !== 0xA5 || u8[1] !== 0x4E) return;
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  const type = u8[2], m = u8[3], s = u8[4];
+  const w = dv.getUint16(6, true), h = dv.getUint16(8, true);
+  const fid = dv.getUint32(10, true);
+  const key = fid + "|" + type;
+  if (key === lastFrameKey) return;
+  lastFrameKey = key;
+  ensureRam(w, h);
+  const key2 = w + "x" + h + "/" + m + "/" + s;
+  const changed = (key2 !== onFrame.__k);
+  if (changed) {
+    onFrame.__k = key2;
+    mad = m; flip180 = s;
+    relayout();
+  }
+  const d = ramData.data;
+  let o = 16;
+  if (type === 1) {
+    for (let y = 0; y < ramH; y++) {
+      let i = y * ramW * 4;
+      for (let x = 0; x < ramW; x++) {
+        const v = (u8[o] << 8) | u8[o + 1];
+        o += 2;
+        d[i]     = ((v >> 11) & 0x1F) << 3;
+        d[i + 1] = ((v >> 5) & 0x3F) << 2;
+        d[i + 2] = (v & 0x1F) << 3;
+        i += 4;
+      }
+    }
+  } else if (type === 2) {
+    const tw = Math.ceil(ramW / 16);
+    const n = dv.getUint16(o, true);
+    o += 2;
+    for (let k = 0; k < n; k++) {
+      const idx = dv.getUint16(o, true);
+      o += 2;
+      const tx = (idx % tw) * 16, ty = Math.floor(idx / tw) * 16;
+      for (let iy = 0; iy < 16; iy++) {
+        for (let ix = 0; ix < 16; ix++) {
+          const x = tx + ix, y = ty + iy;
+          if (x >= ramW || y >= ramH) { o += 2; continue; }
+          const v = (u8[o] << 8) | u8[o + 1];
+          o += 2;
+          const i = (y * ramW + x) * 4;
+          d[i]     = ((v >> 11) & 0x1F) << 3;
+          d[i + 1] = ((v >> 5) & 0x3F) << 2;
+          d[i + 2] = (v & 0x1F) << 3;
+        }
+      }
+    }
+  } else {
+    return;
+  }
+  ramCtx.putImageData(ramData, 0, 0);
+  relayout();
+}
+
+function connectWs() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(proto + "://" + location.host + "/ws");
+  ws.binaryType = "arraybuffer";
+  ws.onopen = () => { ws.send("hi"); $("infoLine").textContent = "video stream connected"; };
+  ws.onclose = () => {
+    $("infoLine").textContent = "video stream disconnected — retrying…";
+    setTimeout(connectWs, 1500);
+  };
+  ws.onmessage = (ev) => {
+    if (typeof ev.data === "string") return;
+    framesSince++;
+    onFrame(new Uint8Array(ev.data));
+  };
+}
+
+function pollStatus() {
+  fetch("/api/status").then(r => r.json()).then(s => {
+    const modeTxt = s.mode === "sta" ? "STA:" + (s.ssid || "?") : "AP:" + (s.ssid || "(auto)");
+    $("bmode").textContent = s.mode + ((s.ssid) ? ":" + s.ssid : "");
+    $("bmode").classList.toggle("on", s.mode === "sta");
+    $("bip").textContent = s.ip || "--";
+    $("bres").textContent = s.ram_w + "x" + s.ram_h;
+    $("bws").textContent = "ws " + s.ws_clients;
+    $("bps").textContent = "spi " + s.spi_kbps + " kb/s";
+    $("btest").textContent = s.test_enabled ? ("host: " + $("tgPattern").options[s.test_pattern || 0].text) : "host off";
+    $("btest").classList.toggle("on", !!s.test_enabled);
+    const now = performance.now();
+    fps = Math.round(framesSince * 1000 / (now - fpsAt));
+    framesSince = 0; fpsAt = now;
+    $("bfps").textContent = fps + " fps";
+
+    if (document.activeElement === null || !document.activeElement.hasAttribute("id")) {
+      if ($("dsW").value != s.ram_w) $("dsW").value = s.ram_w;
+      if ($("dsH").value != s.ram_h) $("dsH").value = s.ram_h;
+      $("dsRot").value = String(s.rot & 3);
+      $("dsSwap").value = String(s.pixel_swap);
+      $("dsAddr").value = String(s.addr_bytes);
+      $("dsStyle").value = String(s.madctl_style);
+      $("dsSpiMode").value = String(s.spi_mode);
+      $("tgLoop").value = String(s.loopback || 0);
+    }
+    let info = "frames:" + s.frame_id + " spi cmd:" + s.cmd_cnt + " up:" + s.up_s + "s heap " + s.heap;
+    if (s.spi_full > 0) info += " | NOTE: " + s.spi_full + " buffer-full bursts (host may truncate long writes)";
+    $("infoLine").textContent = info;
+    $("diagLine").textContent = "spi mode " + s.spi_mode + (s.spi_dma ? " dma" : " no-dma") +
+      " | edges " + s.edges + " dc0:" + s.dc0 + " dc1:" + s.dc1 +
+      " trans:" + s.spi_trans + " big:" + s.big + " mis:" + (s.mis || 0) + " kbps:" + s.spi_kbps +
+      " ramwr:" + s.ramwr + " pix:" + s.pix + " cmd:" + s.cmd_cnt;
+  }).catch(() => {});
+}
+
+function post(url, body) {
+  return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+    .then(r => r.json())
+    .then(j => {
+      $("msg").textContent = j.msg || (j.ok === false ? "error" : "done");
+      return j;
+    })
+    .catch(e => { $("msg").textContent = String(e); return { ok: false }; });
+}
+
+$("dsRot").onchange = () => { rot = parseInt($("dsRot").value) || 0; relayout(); };
+function resizePreview(w, h) {
+  if (!(w >= 16 && h >= 16)) return;
+  if (!ramData || ramCv.width !== w || ramCv.height !== h) {
+    ensureRam(w, h);
+    ramCtx.putImageData(ramData, 0, 0);
+  }
+  relayout();
+}
+$("btnApply").onclick = () => {
+  post("/api/display", {
+    ram_w: parseInt($("dsW").value) || 0,
+    ram_h: parseInt($("dsH").value) || 0,
+    rot: parseInt($("dsRot").value) || 0,
+    pixel_swap: parseInt($("dsSwap").value) === 0 ? 0 : 1,
+    addr_bytes: parseInt($("dsAddr").value) === 2 ? 2 : 4,
+    madctl_style: parseInt($("dsStyle").value) === 1 ? 1 : 0,
+    spi_mode: parseInt($("dsSpiMode").value) || 0
+  });
+  resizePreview(parseInt($("dsW").value) || 0, parseInt($("dsH").value) || 0);
+};
+$("btnTest").onclick = () => {
+  if (!ramData) return;
+  const d = ramData.data;
+  for (let y = 0; y < ramH; y++) {
+    for (let x = 0; x < ramW; x++) {
+      const v = Math.round((x / Math.max(1, ramW - 1)) * 31) << 11;
+      const g = Math.round((y / Math.max(1, ramH - 1)) * 63) << 5;
+      const c = v | g | (31 - Math.round((x / Math.max(1, ramW - 1)) * 31));
+      const i = (y * ramW + x) * 4;
+      d[i] = ((c >> 11) & 0x1F) << 3;
+      d[i + 1] = ((c >> 5) & 0x3F) << 2;
+      d[i + 2] = (c & 0x1F) << 3;
+    }
+  }
+  ramCtx.putImageData(ramData, 0, 0);
+  relayout();
+  $("msg").textContent = "local test pattern (no host needed)";
+};
+$("btnWifi").onclick = () => post("/api/wifi", { ssid: $("wfSsid").value.trim(), pass: $("wfPass").value });
+$("btnAp").onclick = () => post("/api/ap", { ssid: $("apSsid").value.trim(), pass: $("apPass").value });
+$("btnTestOn").onclick = () => post("/api/test", {
+  enable: 1,
+  pattern: parseInt($("tgPattern").value) || 0,
+  fps: parseInt($("tgFps").value) || 10,
+  mhz: parseInt($("tgMhz").value) || 8,
+  loopback: parseInt($("tgLoop").value) || 0
+});
+$("btnTestOff").onclick = () => post("/api/test", { enable: 0 });
+$("btnApMode").onclick = () => post("/api/action", { op: "ap_mode" });
+$("btnReboot").onclick = () => post("/api/action", { op: "reboot" });
+$("btnFactory").onclick = () => {
+  if (confirm("Erase all settings?")) post("/api/action", { op: "factory" });
+};
+
+const emu = {
+  stop: true, W: 0, H: 0, buf: null,
+  pixelOrder() { return (parseInt($("dsSwap").value) || 0) === 0; },
+  begin(w, h) {
+    this.W = w; this.H = h; this.buf = new Uint8Array(w * h * 2);
+    const c = new Uint8Array(11);
+    c[0] = 0x2A; c[1] = 0; c[2] = 0; c[3] = (w - 1) >> 8; c[4] = (w - 1) & 0xFF;
+    c[5] = 0x2B; c[6] = 0; c[7] = 0; c[8] = (h - 1) >> 8; c[9] = (h - 1) & 0xFF;
+    c[10] = 0x2C;
+    return fetch("/api/inject?dc=0", { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: c })
+      .then(() => {});
+  },
+  pixel(x, y, c) {
+    if (x < 0 || y < 0 || x >= this.W || y >= this.H || !this.buf) return;
+    const o = (y * this.W + x) * 2;
+    if (this.pixelOrder()) { this.buf[o] = c >> 8; this.buf[o + 1] = c & 255; }
+    else { this.buf[o] = c & 255; this.buf[o + 1] = c >> 8; }
+  },
+  clear(c) { for (let y = 0; y < this.H; y++) for (let x = 0; x < this.W; x++) this.pixel(x, y, c); },
+  rect(x, y, w, h, c) {
+    for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.pixel(i, j, c);
+  },
+  async flush() {
+    if (!this.buf || !this.W) return;
+    try {
+      await fetch("/api/inject", { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: this.buf });
+    } catch (e) {}
+  }
+};
+
+async function runInjCode() {
+  $("bcode").textContent = "code on"; $("bcode").classList.add("on");
+  emu.stop = false;
+  await post("/api/test", { enable: 0 });
+  const W = parseInt($("dsW").value) || 80, H = parseInt($("dsH").value) || 160;
+  try {
+    await emu.begin(W, H);
+    const code = $("caCmd").value;
+    const fn = new Function("emu", 'return (async () => { "use strict";\n' + code + " })();");
+    await fn(emu);
+    await emu.flush();
+  } catch (e) {
+    $("msg").textContent = "code error: " + e;
+  }
+  emu.stop = true;
+  $("bcode").textContent = "code off"; $("bcode").classList.remove("on");
+}
+
+const INJ_DEMO =
+`// injection demo: bouncing block, 25 fps
+for (let f = 0; f < 400 && !emu.stop; f++) {
+  emu.clear(0x0000);
+  const x = f * 3 % (emu.W - 16), y = 8;
+  emu.rect(x, y, 16, 16, 0xF800);
+  emu.rect(0, emu.H - 8, emu.W, 8, 0x07E0);
+  await emu.flush();
+  await new Promise(r => setTimeout(r, 40));
+}`;
+
+$("btnInjRun").onclick = runInjCode;
+$("btnInjDemo").onclick = () => { $("caCmd").value = INJ_DEMO; runInjCode(); };
+$("btnInjStop").onclick = () => { emu.stop = true; $("msg").textContent = "injection loop stopped"; };
+$("caCmd").value = INJ_DEMO;
+connectWs();
+pollStatus();
+setInterval(pollStatus, 2000);
+</script>
+</body>
+</html>

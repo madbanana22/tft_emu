@@ -1,0 +1,16 @@
+{
+    "idf.currentSetup": "E:\\esp\\.espressif\\v6.1\\esp-idf",
+    "idf.flashType": "UART",
+    "idf.openOcdConfigs": [
+        "interface/ftdi/esp_ftdi.cfg",
+        "target/esp32.cfg"
+    ],
+    "idf.customExtraVars": {},
+    "clangd.path": "C:\\Espressif\\tools\\esp-clangd\\esp-21.1.3_20260408\\esp-clangd\\bin\\clangd.exe",
+    "clangd.arguments": [
+      "--background-index",
+      "--query-driver=**",
+      "--compile-commands-dir=e:\\esp\\tft_emu\\build"
+    ],
+    "idf.port": "COM7"
+}

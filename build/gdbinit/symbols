@@ -1,0 +1,9 @@
+
+
+# Load bootloader symbols
+set confirm off
+    add-symbol-file E:/esp/tft_emu/build/bootloader/bootloader.elf
+set confirm on
+
+# Load application symbols
+file E:/esp/tft_emu/build/tft_emu.elf

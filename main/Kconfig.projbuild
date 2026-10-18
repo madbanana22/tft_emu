@@ -1,0 +1,85 @@
+menu "TFT Emulator"
+
+    config TFT_EMU_SPI_HOST
+        int "SPI peripheral index (1 = HSPI/SPI2, 2 = VSPI/SPI3)"
+        default 1
+        range 1 2
+
+    config TFT_EMU_PIN_SCK
+        int "GPIO: SCK (host SPI clock into emulator)"
+        default 18
+
+    config TFT_EMU_PIN_MOSI
+        int "GPIO: SDA (host data output / emulator input)"
+        default 23
+
+    config TFT_EMU_PIN_MISO
+        int "GPIO: master MISO line (emulator output, -1 = not wired)"
+        default 19
+
+    config TFT_EMU_PIN_CS
+        int "GPIO: CS"
+        default 5
+
+    config TFT_EMU_PIN_DC
+        int "GPIO: DC (data/command select from host)"
+        default 21
+
+    config TFT_EMU_PIN_RES
+        int "GPIO: RES (host reset line, -1 = not wired)"
+        default 4
+
+    config TFT_EMU_PIN_BOOT
+        int "GPIO: BOOT button (press to force AP mode)"
+        default 0
+
+    config TFT_EMU_TRANS_BYTES
+        int "Rx buffer bytes per queued SPI transaction (multiple of 4, >= one full frame for single-burst masters)"
+        default 40960
+        range 512 100000
+
+    config TFT_EMU_TRANS_QUEUE
+        int "Number of queued SPI slave transactions"
+        default 2
+        range 2 8
+
+    config TFT_EMU_WS_FPS
+        int "Browser streaming frame period (fps cap)"
+        default 15
+        range 1 60
+
+    config TFT_EMU_AP_PASS
+        string "Default Access Point password (when configured via web it is stored in NVS)"
+        default "tftemu123"
+
+    config TFT_EMU_TEST_SPI_HOST
+        int "Internal test SPI master peripheral (2 = VSPI/SPI3; must differ from the emulator host)"
+        default 2
+        range 1 2
+
+    config TFT_EMU_TEST_PIN_SCK
+        int "GPIO: test SCK (jumper to emulator SCK)"
+        default 14
+
+    config TFT_EMU_TEST_PIN_MOSI
+        int "GPIO: test MOSI (jumper to emulator SDA/MOSI)"
+        default 13
+
+    config TFT_EMU_TEST_PIN_CS
+        int "GPIO: test CS (jumper to emulator CS)"
+        default 27
+
+    config TFT_EMU_TEST_PIN_DC
+        int "GPIO: test DC (jumper to emulator DC)"
+        default 26
+
+    config TFT_EMU_TEST_PIN_RES
+        int "GPIO: test RES (jumper to emulator RES, -1 = not wired)"
+        default 25
+
+    config TFT_EMU_TEST_MHZ
+        int "Default test SPI master clock (MHz)"
+        default 8
+        range 1 40
+
+endmenu
